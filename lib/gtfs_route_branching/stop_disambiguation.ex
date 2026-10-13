@@ -1,5 +1,7 @@
 defmodule GTFSRouteBranching.StopDisambiguation do
-  @moduledoc false
+  @moduledoc """
+  Disambiguates stops that are visited more than once on a route.
+  """
   @type disambiguated_stop_id :: {GTFSRouteBranching.stop_id(), count :: pos_integer()}
   @type t :: [{GTFSRouteBranching.route_pattern(), [disambiguated_stop_id()]}]
 
@@ -63,12 +65,12 @@ defmodule GTFSRouteBranching.StopDisambiguation do
   end
 
   defmodule StopCountState do
-    @moduledoc """
-    Internal helper for `pattern_stops_with_counts/1`.
+    @moduledoc false
 
-    Uses `List.myers_difference/2` to build up a list of disambiguated stops, so that repeated stops are correctly
-    assigned the most optimal count possible.
-    """
+    # Internal helper for `pattern_stops_with_counts/1`.
+    # Uses `List.myers_difference/2` to build up a list of disambiguated stops, so that repeated stops are correctly
+    # assigned the most optimal count possible.
+
     @type t :: %__MODULE__{
             stops_with_counts: [{GTFSRouteBranching.stop_id(), count :: pos_integer()}],
             global_list_countless: [GTFSRouteBranching.stop_id()],
