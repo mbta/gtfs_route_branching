@@ -6,6 +6,10 @@ defmodule GTFSRouteBranching.StopGraph do
   alias GTFSRouteBranching.StopDisambiguation
 
   defmodule Node do
+    @moduledoc """
+    An individual stop, with the typicalities of patterns that visit it.
+    """
+
     @type t :: %__MODULE__{
             stop: GTFSRouteBranching.stop(),
             typicalities: MapSet.t(GTFSRouteBranching.route_pattern_typicality())

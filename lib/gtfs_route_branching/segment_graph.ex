@@ -1,7 +1,15 @@
 defmodule GTFSRouteBranching.SegmentGraph do
+  @moduledoc """
+  Records the connections between lists of stops that are either all typical or all nontypical.
+  """
+
   alias GTFSRouteBranching.StopGraph
 
   defmodule Node do
+    @moduledoc """
+    An individual segment, with the typicalities of patterns that visit its stops.
+    """
+
     @type t :: %__MODULE__{
             stops: [GTFSRouteBranching.stop()],
             typicalities: MapSet.t(GTFSRouteBranching.route_pattern_typicality())

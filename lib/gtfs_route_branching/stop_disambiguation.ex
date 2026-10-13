@@ -1,4 +1,5 @@
 defmodule GTFSRouteBranching.StopDisambiguation do
+  @moduledoc false
   @type disambiguated_stop_id :: {GTFSRouteBranching.stop_id(), count :: pos_integer()}
   @type t :: [{GTFSRouteBranching.route_pattern(), [disambiguated_stop_id()]}]
 

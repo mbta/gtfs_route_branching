@@ -1,4 +1,8 @@
 defmodule GTFSRouteBranching.Segment do
+  @moduledoc """
+  A list of contiguous stops on a route that are either all typical or all non-typical.
+  """
+
   alias GTFSRouteBranching.Segment
   alias GTFSRouteBranching.SegmentGraph
 
@@ -14,6 +18,10 @@ defmodule GTFSRouteBranching.Segment do
   @typep lane_index :: 0 | 1 | 2
 
   defmodule StickConnection do
+    @moduledoc """
+    A connection in a row between two stops.
+    """
+
     @type vpos :: :top | :center | :bottom
 
     @type t :: %__MODULE__{
@@ -29,6 +37,10 @@ defmodule GTFSRouteBranching.Segment do
   end
 
   defmodule BranchStop do
+    @moduledoc """
+    An individual stop in the diagram.
+    """
+
     @type t :: %__MODULE__{
             stop_id: GTFSRouteBranching.stop_id(),
             stop_lane: Segment.lane(),
