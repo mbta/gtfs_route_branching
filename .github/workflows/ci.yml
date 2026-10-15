@@ -18,58 +18,9 @@ permissions:
 jobs:
   zizmor:
     uses: $/.github/workflows/zizmor.yml
+
   setup:
-    name: asdf and Elixir dependencies
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
-    outputs:
-      cache-key-asdf: ${{ steps.cache-keys.outputs.asdf }}
-      cache-key-mix: ${{ steps.cache-keys.outputs.mix }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Set cache keys
-        id: cache-keys
-        run: |
-          echo "asdf-restore=cache-asdf-" >> $GITHUB_OUTPUT
-          echo "asdf=cache-asdf-$TOOL_VERSIONS_HASH" >> $GITHUB_OUTPUT
-          echo "mix-restore=cache-mix-$TOOL_VERSIONS_HASH-" >> $GITHUB_OUTPUT
-          echo "mix=cache-mix-$TOOL_VERSIONS_HASH-$MIX_LOCK_HASH" >> $GITHUB_OUTPUT
-        env:
-          TOOL_VERSIONS_HASH: ${{ hashFiles('.tool-versions') }}
-          MIX_LOCK_HASH: ${{ hashFiles('**/mix.lock') }}
-      - name: asdf cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.asdf
-          key: ${{ steps.cache-keys.outputs.asdf }}
-          restore-keys: ${{ steps.cache-keys.outputs.asdf-restore }}
-        id: asdf-cache
-      - uses: asdf-vm/actions/install@b7bcd026f18772e44fe1026d729e1611cc435d47 # v4.0.1
-        if: steps.asdf-cache.outputs.cache-hit != 'true'
-      - name: Setup asdf environment
-        uses: mbta/actions/reshim-asdf@788f8e264e9ebb1b76b927c89e6466d5a162be80 # v2.24
-      - name: mix rebar and hex
-        run: |
-          mix local.rebar --force
-          mix local.hex --force
-        if: steps.asdf-cache.outputs.cache-hit != 'true'
-      - name: Mix cache
-        id: deps-cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ steps.cache-keys.outputs.mix }}
-          restore-keys: ${{ steps.cache-keys.outputs.mix-restore }}
-      - name: Install and compile Mix dependencies
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: |
-          mix deps.get
-          mix deps.compile
-          MIX_ENV=test mix deps.compile
+    uses: $/.github/workflows/setup.yml
 
   build_elixir:
     name: Build and test Elixir
@@ -77,25 +28,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     steps:
-      - name: asdf cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Load asdf and Elixir dependencies
+        uses: $/.github/actions/load-setup
         with:
-          path: ~/.asdf
-          key: ${{ needs.setup.outputs.cache-key-asdf }}
-          fail-on-cache-miss: true
-      - name: Setup asdf environment
-        uses: mbta/actions/reshim-asdf@788f8e264e9ebb1b76b927c89e6466d5a162be80 # v2.24
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Restore Mix cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ needs.setup.outputs.cache-key-mix }}
-          fail-on-cache-miss: true
+          cache-key-asdf: ${{ needs.setup.outputs.cache-key-asdf }}
+          cache-key-mix: ${{ needs.setup.outputs.cache-key-mix }}
       - name: Compile (warnings as errors)
         run: mix compile --force --warnings-as-errors
       - name: Credo

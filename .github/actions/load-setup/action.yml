@@ -1,0 +1,31 @@
+name: Load setup cache
+description: Loads the cached asdf and Elixir dependencies
+
+inputs:
+  cache-key-asdf:
+    required: true
+  cache-key-mix:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: asdf cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.asdf
+        key: ${{ inputs.cache-key-asdf }}
+        fail-on-cache-miss: true
+    - name: Setup asdf environment
+      uses: mbta/actions/reshim-asdf@788f8e264e9ebb1b76b927c89e6466d5a162be80 # v2.24
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Restore Mix cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          deps
+          _build
+        key: ${{ inputs.cache-key-mix }}
+        fail-on-cache-miss: true
