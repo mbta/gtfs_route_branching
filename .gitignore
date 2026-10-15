@@ -23,3 +23,5 @@ erl_crash.dump
 gtfs_route_branching-*.tar
 
 .elixir_ls
+.envrc
+route-branching
