@@ -1,21 +1,22 @@
 # GTFSRouteBranching
 
-**TODO: Add description**
+Calculates diagrams for branching routes. See [docs](https://mbta.github.io/gtfs_route_branching) for more detail.
+
+```
+   ┯  A
+  ┌┷┐ B
+® ┿ │ C
+  │ ┿ D
+  └┯┘ E
+   ┷  F
+```
 
 ## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `gtfs_route_branching` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:gtfs_route_branching, "~> 0.1.0"}
+    {:gtfs_route_branching, github: "mbta/gtfs_route_branching", tag: "0.1.1"}
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/gtfs_route_branching>.
-
