@@ -4,7 +4,7 @@ defmodule GTFSRouteBranching.MixProject do
   def project do
     [
       app: :gtfs_route_branching,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -35,6 +35,7 @@ defmodule GTFSRouteBranching.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
       {:ex_machina, "~> 2.8", only: :test},
+      {:jason, "~> 1.4", optional: true},
       {:lcov_ex, "~> 0.3", only: [:test], runtime: false},
       {:uniq, "~> 0.6", only: :test}
     ]

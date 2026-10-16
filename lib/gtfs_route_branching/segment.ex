@@ -32,7 +32,13 @@ defmodule GTFSRouteBranching.Segment do
             from_vpos: vpos(),
             to_vpos: vpos()
           }
-    @derive Jason.Encoder
+
+    @derive JSON.Encoder
+
+    if Code.ensure_loaded?(Jason.Encoder) do
+      @derive Jason.Encoder
+    end
+
     defstruct [:from_stop, :to_stop, :from_lane, :to_lane, :from_vpos, :to_vpos]
   end
 
@@ -46,12 +52,24 @@ defmodule GTFSRouteBranching.Segment do
             stop_lane: Segment.lane(),
             connections: [StickConnection.t()]
           }
-    @derive Jason.Encoder
+
+    @derive JSON.Encoder
+
+    if Code.ensure_loaded?(Jason.Encoder) do
+      @derive Jason.Encoder
+    end
+
     defstruct [:stop_id, :stop_lane, :connections]
   end
 
   @type t :: %__MODULE__{stops: [BranchStop.t()], name: String.t() | nil, typical?: boolean()}
-  @derive Jason.Encoder
+
+  @derive JSON.Encoder
+
+  if Code.ensure_loaded?(Jason.Encoder) do
+    @derive Jason.Encoder
+  end
+
   defstruct [:stops, :name, :typical?]
 
   @spec get_list_from_graph([segment_id()], SegmentGraph.t(), [String.t()]) ::
