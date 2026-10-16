@@ -4,7 +4,7 @@ defmodule Mix.Tasks.CheckRouteBranching do
 
   Filter to a handful of routes and directions with `mix check_route_branching 33 Boat-F1:1 350:0`.
 
-  Works best with GraphViz installed.
+  Works best with Graphviz installed.
   """
 
   use Mix.Task
@@ -20,6 +20,20 @@ defmodule Mix.Tasks.CheckRouteBranching do
   @impl Mix.Task
   def run(args) do
     {_opts, args} = OptionParser.parse!(args, strict: [])
+
+    has_graphviz? =
+      try do
+        Mix.Shell.cmd(
+          {"dot", ["--version"]},
+          fn _ ->
+            :ok
+          end
+        ) == 0
+      rescue
+        ErlangError ->
+          Logger.warning("Graphviz not available, not rendering stop or sequence graphs")
+          false
+      end
 
     system_data = fetch_system_data()
     {%{routes: routes}, system_data} = Map.split(system_data, [:routes])
@@ -42,7 +56,7 @@ defmodule Mix.Tasks.CheckRouteBranching do
       routes_directions
       |> Enum.map(fn {route_id, direction} ->
         route = routes[route_id]
-        run_single_case(route, direction, system_data)
+        run_single_case(route, direction, system_data, has_graphviz?)
       end)
       |> tap(&IO.puts("Checked route branching across #{length(&1)} routes and directions"))
       |> then(&(:error in &1))
@@ -52,7 +66,7 @@ defmodule Mix.Tasks.CheckRouteBranching do
     end
   end
 
-  defp run_single_case(route, direction, system_data) do
+  defp run_single_case(route, direction, system_data, has_graphviz?) do
     caption =
       "#{route_label(route)} (#{route.id}) #{Enum.at(route.direction_names, direction)} (#{direction}) to #{Enum.at(route.direction_destinations, direction)}"
 
@@ -81,19 +95,23 @@ defmodule Mix.Tasks.CheckRouteBranching do
     output_path = Path.join(["route-branching", route.id, "#{direction}"])
     File.mkdir_p!(output_path)
 
-    stop_graph
-    |> render_dot(Path.join(output_path, "stopGraph.png"), &visualize_stop_graph_node/2)
+    if has_graphviz? do
+      stop_graph
+      |> render_dot(Path.join(output_path, "stopGraph.png"), &visualize_stop_graph_node/2)
+    end
 
     segment_names = GTFSRouteBranching.get_name_candidates(route, direction)
 
     if is_nil(segment_graph) do
       Logger.error("segment_graph nil")
     else
-      segment_graph
-      |> render_dot(
-        Path.join(output_path, "segmentGraph.png"),
-        &visualize_segment_graph_node(&1, &2, segment_names)
-      )
+      if has_graphviz? do
+        segment_graph
+        |> render_dot(
+          Path.join(output_path, "segmentGraph.png"),
+          &visualize_segment_graph_node(&1, &2, segment_names)
+        )
+      end
     end
 
     if is_nil(segments) do
