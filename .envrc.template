@@ -1,0 +1,5 @@
+# Configuration for the [MBTA v3 API](https://github.com/mbta/api)
+# Used for reading static and realtime GTFS data
+export API_URL=https://api-dev.mbtace.com/
+# export API_URL=https://api-dev-green.mbtace.com/
+export API_KEY=

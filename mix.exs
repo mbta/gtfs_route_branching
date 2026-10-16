@@ -9,6 +9,7 @@ defmodule GTFSRouteBranching.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      dialyzer: [plt_add_apps: [:mix]],
       test_coverage: [tool: LcovEx, ignore_paths: ["test/"]],
       name: "GTFS Route Branching",
       source_url: "https://github.com/mbta/gtfs_route_branching",
@@ -37,6 +38,7 @@ defmodule GTFSRouteBranching.MixProject do
       {:ex_machina, "~> 2.8", only: :test},
       {:jason, "~> 1.4", optional: true},
       {:lcov_ex, "~> 0.3", only: [:test], runtime: false},
+      {:req, "~> 0.7", only: [:dev, :test]},
       {:uniq, "~> 0.6", only: :test}
     ]
   end
