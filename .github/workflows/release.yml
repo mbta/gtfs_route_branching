@@ -1,0 +1,117 @@
+name: Create Release and Publish Docs
+
+on: 
+  push:
+    branches: 
+      - main
+    paths:
+      - mix.exs
+  workflow_dispatch:
+    inputs:
+      force-release:
+        type: boolean
+        default: false
+        description: Create a release even if `mix.exs` `version` hasn’t changed
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-needed:
+    name: Check if version has changed
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run diff
+        id: diff
+        env:
+          SHA_BEFORE: ${{ github.event.before }}
+          SHA_AFTER: ${{ github.event.after }}
+        run: |
+          if git diff --unified=0 $SHA_BEFORE $SHA_AFTER -- mix.exs | grep --quiet version
+          then
+            echo HAS_CHANGED=yes | tee -a $GITHUB_OUTPUT
+          else
+            echo HAS_CHANGED=no | tee -a $GITHUB_OUTPUT
+          fi
+    outputs:
+      has-changed: ${{ steps.diff.outputs.HAS_CHANGED == 'yes' }}
+
+  setup:
+    needs: check-needed
+    if: ${{ needs.check-needed.outputs.has-changed || inputs.force-release }}
+    uses: $/.github/workflows/setup.yml
+
+  release:
+    name: Create release
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    needs: [check-needed, setup]
+    if: ${{ needs.check-needed.outputs.has-changed || inputs.force-release }}
+    permissions:
+      contents: write # to create the release
+    steps:
+      - name: Load asdf and Elixir dependencies
+        uses: $/.github/actions/load-setup
+        with:
+          cache-key-asdf: ${{ needs.setup.outputs.cache-key-asdf }}
+          cache-key-mix: ${{ needs.setup.outputs.cache-key-mix }}
+      - name: Get new version
+        id: version
+        run: |
+          mix eval 'IO.puts("version=" <> Mix.Project.config()[:version])' | tee -a $GITHUB_OUTPUT
+      - name: Create release
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TAG_NAME: ${{ steps.version.outputs.version }}
+          TARGET_SHA: ${{ github.sha }}
+        with:
+          script: |
+            await github.rest.repos.createRelease({
+              ...context.repo,
+              tag_name: process.env.TAG_NAME,
+              target_commitish: process.env.TARGET_SHA,
+              generate_release_notes: true,
+            })
+
+  build-docs:
+    name: Build docs
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    needs: [check-needed, setup]
+    if: ${{ needs.check-needed.outputs.has-changed || inputs.force-release }}
+    steps:
+      - name: Load asdf and Elixir dependencies
+        uses: $/.github/actions/load-setup
+        with:
+          cache-key-asdf: ${{ needs.setup.outputs.cache-key-asdf }}
+          cache-key-mix: ${{ needs.setup.outputs.cache-key-mix }}
+      - name: Build documentation
+        run: mix docs
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ./docs
+
+  publish-docs:
+    name: Publish docs
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    needs: [check-needed, build-docs]
+    if: ${{ needs.check-needed.outputs.has-changed || inputs.force-release }}
+    permissions:
+      id-token: write # to verify the deployment originates from an appropriate source
+      pages: write # to deploy to Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
