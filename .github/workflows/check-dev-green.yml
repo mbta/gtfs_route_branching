@@ -63,8 +63,6 @@ jobs:
           git init --initial-branch=main
           git config user.email runner@example.com
           git config user.name gha
-          echo '*.png' >> .gitignore
-          echo '*.png.dot' >> .gitignore
           git add .
           git commit -m "calculate route branching for api-dev"
           rm -r *

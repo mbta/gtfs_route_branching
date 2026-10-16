@@ -1,10 +1,12 @@
 defmodule Mix.Tasks.CheckRouteBranching do
   @moduledoc """
-  Previews the `GTFSRouteBranching` logic, rendering graphs and diagrams for all non-trivial routes.
+  Previews the `GTFSRouteBranching` logic, rendering diagrams for all non-trivial routes.
 
   Filter to a handful of routes and directions with `mix check_route_branching 33 Boat-F1:1 350:0`.
 
-  Works best with Graphviz installed.
+  Use `--save-graphs` to also save the stop and segment graphs as Graphviz .dot files.
+
+  Use `--render-graphs` to render the stop and segment graphs with Graphviz.
   """
 
   use Mix.Task
@@ -19,20 +21,21 @@ defmodule Mix.Tasks.CheckRouteBranching do
 
   @impl Mix.Task
   def run(args) do
-    {_opts, args} = OptionParser.parse!(args, strict: [])
+    {opts, args} =
+      OptionParser.parse!(args, strict: [save_graphs: :boolean, render_graphs: :boolean])
 
-    has_graphviz? =
-      try do
-        Mix.Shell.cmd(
-          {"dot", ["--version"]},
-          fn _ ->
-            :ok
-          end
-        ) == 0
-      rescue
-        ErlangError ->
-          Logger.warning("Graphviz not available, not rendering stop or sequence graphs")
+    save_graphs? = Keyword.get(opts, :save_graphs, false)
+
+    render_graphs? =
+      if Keyword.get(opts, :render_graphs, false) do
+        if :os.find_executable(~c"dot") == false do
+          Logger.warning("Graphviz not available, cannot render graphs")
           false
+        else
+          true
+        end
+      else
+        false
       end
 
     system_data = fetch_system_data()
@@ -56,7 +59,7 @@ defmodule Mix.Tasks.CheckRouteBranching do
       routes_directions
       |> Enum.map(fn {route_id, direction} ->
         route = routes[route_id]
-        run_single_case(route, direction, system_data, has_graphviz?)
+        run_single_case(route, direction, system_data, save_graphs?, render_graphs?)
       end)
       |> tap(&IO.puts("Checked route branching across #{length(&1)} routes and directions"))
       |> then(&(:error in &1))
@@ -66,7 +69,7 @@ defmodule Mix.Tasks.CheckRouteBranching do
     end
   end
 
-  defp run_single_case(route, direction, system_data, has_graphviz?) do
+  defp run_single_case(route, direction, system_data, save_graphs?, render_graphs?) do
     caption =
       "#{route_label(route)} (#{route.id}) #{Enum.at(route.direction_names, direction)} (#{direction}) to #{Enum.at(route.direction_destinations, direction)}"
 
@@ -95,23 +98,26 @@ defmodule Mix.Tasks.CheckRouteBranching do
     output_path = Path.join(["route-branching", route.id, "#{direction}"])
     File.mkdir_p!(output_path)
 
-    if has_graphviz? do
-      stop_graph
-      |> render_dot(Path.join(output_path, "stopGraph.png"), &visualize_stop_graph_node/2)
-    end
+    stop_graph
+    |> render_dot(
+      Path.join(output_path, "stopGraph.png"),
+      &visualize_stop_graph_node/2,
+      save_graphs?,
+      render_graphs?
+    )
 
     segment_names = GTFSRouteBranching.get_name_candidates(route, direction)
 
     if is_nil(segment_graph) do
       Logger.error("segment_graph nil")
     else
-      if has_graphviz? do
-        segment_graph
-        |> render_dot(
-          Path.join(output_path, "segmentGraph.png"),
-          &visualize_segment_graph_node(&1, &2, segment_names)
-        )
-      end
+      segment_graph
+      |> render_dot(
+        Path.join(output_path, "segmentGraph.png"),
+        &visualize_segment_graph_node(&1, &2, segment_names),
+        save_graphs?,
+        render_graphs?
+      )
     end
 
     if is_nil(segments) do
@@ -320,7 +326,9 @@ defmodule Mix.Tasks.CheckRouteBranching do
     |> Enum.find(&MapSet.member?(typicalities, &1))
   end
 
-  defp render_dot(graph, path, process_vertex_label) do
+  defp render_dot(_, _, _, false, false), do: :ok
+
+  defp render_dot(graph, path, process_vertex_label, save_graphs?, render_graphs?) do
     nodes_dot =
       graph
       |> :digraph.vertices()
@@ -339,18 +347,20 @@ defmodule Mix.Tasks.CheckRouteBranching do
       end)
 
     dot_source = "digraph G {\n" <> nodes_dot <> edges_dot <> "}\n"
-    dot_path = path <> ".dot"
+    dot_path = Path.rootname(path) <> ".dot"
     File.write!(dot_path, dot_source)
 
-    try do
+    if render_graphs? do
       Mix.Shell.cmd(
-        {"dot", ["-T#{Path.extname(path) |> String.slice(1, 10)}", "-o#{path}", dot_path]},
+        {"dot", ["-T#{Path.extname(path) |> String.trim_leading(".")}", "-o#{path}", dot_path]},
         fn exit_status ->
           IO.puts(exit_status)
         end
       )
-    rescue
-      ErlangError -> :ok
+    end
+
+    if not save_graphs? do
+      File.rm!(dot_path)
     end
   end
 
