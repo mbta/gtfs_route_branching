@@ -24,6 +24,7 @@ jobs:
       - name: Get run URLs for each step
         id: run_urls
         env:
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           ATTEMPT: ${{ github.run_attempt }}
