@@ -1,6 +1,8 @@
 defmodule GTFSRouteBranching.Segment do
   @moduledoc """
   A list of contiguous stops on a route that are either all typical or all non-typical.
+
+  Alert statuses are applied separately from segment generation with `apply_alerts/2`.
   """
 
   alias GTFSRouteBranching.Segment
@@ -22,6 +24,7 @@ defmodule GTFSRouteBranching.Segment do
     A connection in a row between two stops.
     """
 
+    @type service_status :: :normal | :shuttle | :suspension
     @type vpos :: :top | :center | :bottom
 
     @type t :: %__MODULE__{
@@ -30,7 +33,8 @@ defmodule GTFSRouteBranching.Segment do
             from_lane: Segment.lane(),
             to_lane: Segment.lane(),
             from_vpos: vpos(),
-            to_vpos: vpos()
+            to_vpos: vpos(),
+            service_status: service_status() | nil
           }
 
     @derive JSON.Encoder
@@ -39,7 +43,7 @@ defmodule GTFSRouteBranching.Segment do
       @derive Jason.Encoder
     end
 
-    defstruct [:from_stop, :to_stop, :from_lane, :to_lane, :from_vpos, :to_vpos]
+    defstruct [:from_stop, :to_stop, :from_lane, :to_lane, :from_vpos, :to_vpos, :service_status]
   end
 
   defmodule BranchStop do
@@ -47,10 +51,12 @@ defmodule GTFSRouteBranching.Segment do
     An individual stop in the diagram.
     """
 
+    @type closure_status :: :open | :closed
     @type t :: %__MODULE__{
             stop_id: GTFSRouteBranching.stop_id(),
             stop_lane: Segment.lane(),
-            connections: [StickConnection.t()]
+            connections: [StickConnection.t()],
+            closure_status: closure_status() | nil
           }
 
     @derive JSON.Encoder
@@ -59,7 +65,7 @@ defmodule GTFSRouteBranching.Segment do
       @derive Jason.Encoder
     end
 
-    defstruct [:stop_id, :stop_lane, :connections]
+    defstruct [:stop_id, :stop_lane, :connections, :closure_status]
   end
 
   @type t :: %__MODULE__{stops: [BranchStop.t()], name: String.t() | nil, typical?: boolean()}
@@ -70,7 +76,90 @@ defmodule GTFSRouteBranching.Segment do
     @derive Jason.Encoder
   end
 
-  defstruct [:stops, :name, :typical?]
+  defstruct [
+    :name,
+    :typical?,
+    stops: []
+  ]
+
+  @typep alert_stop_sets :: %{
+           GTFSRouteBranching.alert_effect() => [MapSet.t(GTFSRouteBranching.stop_id())]
+         }
+
+  @doc """
+  Applies the current alerts to generated or cached segments without rebuilding the graphs.
+
+  `GTFSRouteBranching.calculate/4` returns segments with nil statuses; call this function
+  even with an empty alert list to resolve those statuses.
+
+  All stop closures and connection service statuses are replaced, including statuses from
+  previous calls. Unaffected stops become `:open` and unaffected connections become `:normal`.
+  Both connection endpoints must occur in the same alert; suspension takes precedence over
+  shuttle. Stop IDs match directly, and nil informed-entity stop IDs are ignored.
+
+  Alerts are not filtered by route or direction. Callers must pass alerts already scoped to the
+  route and direction represented by the segments.
+
+  Every drawn piece of a connection is updated using its `from_stop` and `to_stop`, even
+  when it passes a different stop. Segment layout and naming are preserved.
+  """
+  @spec apply_alerts([t()], [GTFSRouteBranching.alert()]) :: [t()]
+  def apply_alerts(segments, alerts) do
+    alerts_by_effect =
+      Enum.group_by(alerts, & &1.effect, fn alert ->
+        alert.informed_entities
+        |> Enum.map(& &1.stop)
+        |> Enum.reject(&is_nil/1)
+        |> MapSet.new()
+      end)
+
+    closed_stops =
+      alerts_by_effect
+      |> Map.take([:stop_closure, :station_closure, :dock_closure])
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    Enum.map(segments, fn segment ->
+      stops =
+        Enum.map(segment.stops, &apply_stop_alerts(&1, closed_stops, alerts_by_effect))
+
+      %{segment | stops: stops}
+    end)
+  end
+
+  @spec apply_stop_alerts(
+          BranchStop.t(),
+          MapSet.t(GTFSRouteBranching.stop_id()),
+          alert_stop_sets()
+        ) :: BranchStop.t()
+  defp apply_stop_alerts(stop, closed_stops, alerts_by_effect) do
+    closure_status =
+      case MapSet.member?(closed_stops, stop.stop_id) do
+        true -> :closed
+        false -> :open
+      end
+
+    connections =
+      Enum.map(stop.connections, fn connection ->
+        %{connection | service_status: connection_service_status(connection, alerts_by_effect)}
+      end)
+
+    %{stop | closure_status: closure_status, connections: connections}
+  end
+
+  @spec connection_service_status(StickConnection.t(), alert_stop_sets()) ::
+          :normal | :shuttle | :suspension
+  defp connection_service_status(connection, alerts_by_effect) do
+    Enum.find([:suspension, :shuttle], :normal, fn effect ->
+      alerts_by_effect
+      |> Map.get(effect, [])
+      |> Enum.any?(fn stop_ids ->
+        MapSet.member?(stop_ids, connection.from_stop) and
+          MapSet.member?(stop_ids, connection.to_stop)
+      end)
+    end)
+  end
 
   @spec get_list_from_graph([segment_id()], SegmentGraph.t(), [String.t()]) ::
           {:ok, [t()]} | {:error, String.t()}

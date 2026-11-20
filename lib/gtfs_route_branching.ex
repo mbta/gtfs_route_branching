@@ -61,6 +61,13 @@ defmodule GTFSRouteBranching do
   @type trip_id :: String.t()
   @type trip :: %{optional(atom()) => term(), id: trip_id(), stop_ids: [stop_id()]}
 
+  @type alert_effect :: :suspension | :shuttle | :stop_closure | :station_closure | :dock_closure
+  @type alert :: %{
+          optional(atom()) => term(),
+          effect: alert_effect(),
+          informed_entities: [%{optional(atom()) => term(), stop: stop_id() | nil}]
+        }
+
   @type system_data :: %{
           route_patterns: %{route_pattern_id() => route_pattern()},
           representative_trips: %{trip_id() => trip()},
