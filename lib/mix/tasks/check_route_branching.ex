@@ -7,6 +7,9 @@ defmodule Mix.Tasks.CheckRouteBranching do
   Use `--save-graphs` to also save the stop and segment graphs as Graphviz .dot files.
 
   Use `--render-graphs` to render the stop and segment graphs with Graphviz.
+
+  Currently active alerts are applied to the diagrams. Closed stops are marked `[closed]`,
+  and shuttle or suspension connections are marked on the row where they start.
   """
 
   use Mix.Task
@@ -95,6 +98,9 @@ defmodule Mix.Tasks.CheckRouteBranching do
       Logger.warning("#{caption} took #{us / 1000.0}ms")
     end
 
+    segments =
+      Segment.apply_alerts(segments, alerts_for_route(system_data.alerts, route.id, direction))
+
     output_path = Path.join(["route-branching", route.id, "#{direction}"])
     File.mkdir_p!(output_path)
 
@@ -155,8 +161,52 @@ defmodule Mix.Tasks.CheckRouteBranching do
       routes: Map.new(route_list, &{&1.id, &1}),
       route_patterns: Map.new(route_pattern_list, &{&1.id, &1}),
       representative_trips: Map.new(trip_list, &{&1.id, &1}),
-      stops: Map.new(stop_list, &{&1.id, &1})
+      stops: Map.new(stop_list, &{&1.id, &1}),
+      alerts: fetch_alerts()
     }
+  end
+
+  @alert_effects %{
+    "SUSPENSION" => :suspension,
+    "SHUTTLE" => :shuttle,
+    "STOP_CLOSURE" => :stop_closure,
+    "STATION_CLOSURE" => :station_closure,
+    "DOCK_CLOSURE" => :dock_closure
+  }
+
+  defp fetch_alerts do
+    %{data: alert_list} =
+      fetch_api(
+        url: "/alerts",
+        params: ["filter[datetime]": "NOW", "fields[alert]": "effect,informed_entity"]
+      )
+
+    for %{effect: effect, informed_entity: entities} <- alert_list,
+        Map.has_key?(@alert_effects, effect) do
+      %{
+        effect: @alert_effects[effect],
+        informed_entities:
+          Enum.map(entities, fn entity ->
+            %{
+              stop: entity["stop"],
+              route: entity["route"],
+              direction_id: entity["direction_id"]
+            }
+          end)
+      }
+    end
+  end
+
+  # The library matches only stop IDs, so limit each alert to entities for this route and direction.
+  defp alerts_for_route(alerts, route_id, direction_id) do
+    for alert <- alerts,
+        entities =
+          Enum.filter(alert.informed_entities, fn entity ->
+            entity.route in [nil, route_id] and entity.direction_id in [nil, direction_id]
+          end),
+        entities != [] do
+      %{alert | informed_entities: entities}
+    end
   end
 
   defp fetch_api(opts) do
@@ -191,7 +241,7 @@ defmodule Mix.Tasks.CheckRouteBranching do
     type = String.to_atom(obj["type"])
     id = obj["id"]
     attributes = obj["attributes"]
-    relationships = obj["relationships"]
+    relationships = obj["relationships"] || %{}
 
     result = %{obj_type: type, id: id}
 
@@ -309,16 +359,30 @@ defmodule Mix.Tasks.CheckRouteBranching do
           "®"
         end
 
-      for stop <- segment.stops do
-        left = lane_box(stop, :left)
-        center = lane_box(stop, :center)
-        right = lane_box(stop, :right)
+      for branch_stop <- segment.stops do
+        left = lane_box(branch_stop, :left)
+        center = lane_box(branch_stop, :center)
+        right = lane_box(branch_stop, :right)
 
-        stop = system_data.stops[stop.stop_id]
-        "#{non_typical} #{left}#{center}#{right} #{stop.name}"
+        stop = system_data.stops[branch_stop.stop_id]
+        annotations = alert_annotations(branch_stop, system_data)
+        "#{non_typical} #{left}#{center}#{right} #{stop.name}#{annotations}"
       end
     end)
     |> Enum.join("\n")
+  end
+
+  defp alert_annotations(stop, system_data) do
+    closure = if stop.closure_status == :closed, do: [" [closed]"], else: []
+
+    services =
+      stop.connections
+      |> Enum.filter(&(&1.from_vpos == :center and &1.service_status in [:shuttle, :suspension]))
+      |> Enum.map(fn connection ->
+        " [#{connection.service_status} to #{system_data.stops[connection.to_stop].name}]"
+      end)
+
+    Enum.join(closure ++ services)
   end
 
   defp best_typicality(typicalities) do
