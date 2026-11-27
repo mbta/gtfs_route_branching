@@ -12,6 +12,7 @@ defmodule GTFSRouteBranchingTest do
   defp forward(s1, s2, s3, lane) do
     [
       %StickConnection{
+        service_status: nil,
         from_stop: s1,
         to_stop: s2,
         from_lane: lane,
@@ -20,6 +21,7 @@ defmodule GTFSRouteBranchingTest do
         to_vpos: :center
       },
       %StickConnection{
+        service_status: nil,
         from_stop: s2,
         to_stop: s3,
         from_lane: lane,
@@ -72,10 +74,12 @@ defmodule GTFSRouteBranchingTest do
                  name: nil,
                  stops: [
                    %BranchStop{
+                     closure_status: nil,
                      stop_id: a.id,
                      stop_lane: :center,
                      connections: [
                        %StickConnection{
+                         service_status: nil,
                          from_stop: a.id,
                          to_stop: b.id,
                          from_lane: :center,
@@ -84,6 +88,7 @@ defmodule GTFSRouteBranchingTest do
                          to_vpos: :bottom
                        },
                        %StickConnection{
+                         service_status: nil,
                          from_stop: a.id,
                          to_stop: c.id,
                          from_lane: :center,
@@ -100,12 +105,14 @@ defmodule GTFSRouteBranchingTest do
                  name: nil,
                  stops: [
                    %BranchStop{
+                     closure_status: nil,
                      stop_id: b.id,
                      stop_lane: :right,
                      connections:
                        forward(a.id, b.id, d.id, :right) ++
                          [
                            %StickConnection{
+                             service_status: nil,
                              from_stop: a.id,
                              to_stop: c.id,
                              from_lane: :left,
@@ -122,12 +129,14 @@ defmodule GTFSRouteBranchingTest do
                  name: nil,
                  stops: [
                    %BranchStop{
+                     closure_status: nil,
                      stop_id: c.id,
                      stop_lane: :left,
                      connections:
                        forward(a.id, c.id, d.id, :left) ++
                          [
                            %StickConnection{
+                             service_status: nil,
                              from_stop: b.id,
                              to_stop: d.id,
                              from_lane: :right,
@@ -144,10 +153,12 @@ defmodule GTFSRouteBranchingTest do
                  name: nil,
                  stops: [
                    %BranchStop{
+                     closure_status: nil,
                      stop_id: d.id,
                      stop_lane: :center,
                      connections: [
                        %StickConnection{
+                         service_status: nil,
                          from_stop: b.id,
                          to_stop: d.id,
                          from_lane: :right,
@@ -156,6 +167,7 @@ defmodule GTFSRouteBranchingTest do
                          to_vpos: :center
                        },
                        %StickConnection{
+                         service_status: nil,
                          from_stop: c.id,
                          to_stop: d.id,
                          from_lane: :left,
@@ -227,6 +239,7 @@ defmodule GTFSRouteBranchingTest do
         )
 
       jfk_to_north_quincy_skip = %StickConnection{
+        service_status: nil,
         from_stop: jfk.id,
         to_stop: north_quincy.id,
         from_lane: :left,
@@ -241,6 +254,7 @@ defmodule GTFSRouteBranchingTest do
                  stops:
                    [
                      %BranchStop{
+                       closure_status: nil,
                        stop_id: alewife.id,
                        stop_lane: :center,
                        connections:
@@ -251,6 +265,7 @@ defmodule GTFSRouteBranchingTest do
                        trunk_interior,
                        fn stop, index ->
                          %BranchStop{
+                           closure_status: nil,
                            stop_id: stop.id,
                            stop_lane: :center,
                            connections:
@@ -265,10 +280,12 @@ defmodule GTFSRouteBranchingTest do
                      ) ++
                      [
                        %BranchStop{
+                         closure_status: nil,
                          stop_id: jfk.id,
                          stop_lane: :center,
                          connections: [
                            %StickConnection{
+                             service_status: nil,
                              from_stop: List.last(trunk_interior).id,
                              to_stop: jfk.id,
                              from_lane: :center,
@@ -277,6 +294,7 @@ defmodule GTFSRouteBranchingTest do
                              to_vpos: :center
                            },
                            %StickConnection{
+                             service_status: nil,
                              from_stop: jfk.id,
                              to_stop: north_quincy.id,
                              from_lane: :center,
@@ -285,6 +303,7 @@ defmodule GTFSRouteBranchingTest do
                              to_vpos: :bottom
                            },
                            %StickConnection{
+                             service_status: nil,
                              from_stop: jfk.id,
                              to_stop: savin_hill.id,
                              from_lane: :center,
@@ -302,6 +321,7 @@ defmodule GTFSRouteBranchingTest do
                  stops:
                    [
                      %BranchStop{
+                       closure_status: nil,
                        stop_id: savin_hill.id,
                        stop_lane: :right,
                        connections:
@@ -313,6 +333,7 @@ defmodule GTFSRouteBranchingTest do
                        ashmont_interior,
                        fn stop, index ->
                          %BranchStop{
+                           closure_status: nil,
                            stop_id: stop.id,
                            stop_lane: :right,
                            connections:
@@ -327,6 +348,7 @@ defmodule GTFSRouteBranchingTest do
                      ) ++
                      [
                        %BranchStop{
+                         closure_status: nil,
                          stop_id: ashmont.id,
                          stop_lane: :right,
                          connections:
@@ -341,6 +363,7 @@ defmodule GTFSRouteBranchingTest do
                  stops:
                    [
                      %BranchStop{
+                       closure_status: nil,
                        stop_id: north_quincy.id,
                        stop_lane: :left,
                        connections:
@@ -356,6 +379,7 @@ defmodule GTFSRouteBranchingTest do
                        braintree_interior,
                        fn stop, index ->
                          %BranchStop{
+                           closure_status: nil,
                            stop_id: stop.id,
                            stop_lane: :left,
                            connections:
@@ -370,6 +394,7 @@ defmodule GTFSRouteBranchingTest do
                      ) ++
                      [
                        %BranchStop{
+                         closure_status: nil,
                          stop_id: braintree.id,
                          stop_lane: :left,
                          connections:
@@ -515,6 +540,7 @@ defmodule GTFSRouteBranchingTest do
                forward(nil, "b", "b", :right) ++
                  [
                    %StickConnection{
+                     service_status: nil,
                      from_stop: "a",
                      from_lane: :left,
                      from_vpos: :top,
@@ -586,11 +612,36 @@ defmodule GTFSRouteBranchingTest do
       assert segments == [
                %Segment{
                  stops: [
-                   %BranchStop{stop_id: a.id, stop_lane: :center, connections: []},
-                   %BranchStop{stop_id: b.id, stop_lane: :center, connections: []},
-                   %BranchStop{stop_id: c.id, stop_lane: :center, connections: []},
-                   %BranchStop{stop_id: d.id, stop_lane: :center, connections: []},
-                   %BranchStop{stop_id: e.id, stop_lane: :center, connections: []}
+                   %BranchStop{
+                     stop_id: a.id,
+                     stop_lane: :center,
+                     connections: [],
+                     closure_status: nil
+                   },
+                   %BranchStop{
+                     stop_id: b.id,
+                     stop_lane: :center,
+                     connections: [],
+                     closure_status: nil
+                   },
+                   %BranchStop{
+                     stop_id: c.id,
+                     stop_lane: :center,
+                     connections: [],
+                     closure_status: nil
+                   },
+                   %BranchStop{
+                     stop_id: d.id,
+                     stop_lane: :center,
+                     connections: [],
+                     closure_status: nil
+                   },
+                   %BranchStop{
+                     stop_id: e.id,
+                     stop_lane: :center,
+                     connections: [],
+                     closure_status: nil
+                   }
                  ],
                  name: nil,
                  typical?: true
@@ -598,6 +649,165 @@ defmodule GTFSRouteBranchingTest do
              ]
 
       assert log =~ "A segment had more than two parallel segments"
+
+      [fallback] =
+        Segment.apply_alerts(segments, [
+          build(:alert, effect: :stop_closure, informed_entities: [%{stop: b.id}])
+        ])
+
+      assert Enum.find(fallback.stops, &(&1.stop_id == b.id)).closure_status == :closed
+
+      assert Enum.all?(Enum.reject(fallback.stops, &(&1.stop_id == b.id)), fn stop ->
+               stop.closure_status == :open
+             end)
+    end
+  end
+
+  describe "service alerts" do
+    setup do
+      build(:branching_system)
+    end
+
+    defp calculate_alerts(context, alerts) do
+      {stop_graph, segment_graph, segments} =
+        GTFSRouteBranching.calculate(
+          context.route,
+          0,
+          context.canon_stop_ids,
+          context.system_data
+        )
+
+      :digraph.delete(stop_graph)
+      :digraph.delete(segment_graph)
+
+      segments
+      |> Segment.apply_alerts(alerts)
+      |> Enum.flat_map(& &1.stops)
+    end
+
+    test "resolves empty alerts to open stops and normal connections", context do
+      stops = calculate_alerts(context, [])
+      assert Enum.all?(stops, &(&1.closure_status == :open))
+      assert Enum.all?(Enum.flat_map(stops, & &1.connections), &(&1.service_status == :normal))
+    end
+
+    for effect <- [:stop_closure, :station_closure, :dock_closure] do
+      test "#{effect} closes only matching stops", context do
+        alert =
+          build(:alert,
+            effect: unquote(effect),
+            informed_entities: [%{stop: "b"}, %{stop: nil}, %{stop: "unrelated"}]
+          )
+
+        stops = calculate_alerts(context, [alert])
+        assert Enum.find(stops, &(&1.stop_id == "b")).closure_status == :closed
+        assert Enum.all?(Enum.reject(stops, &(&1.stop_id == "b")), &(&1.closure_status == :open))
+        assert Enum.all?(Enum.flat_map(stops, & &1.connections), &(&1.service_status == :normal))
+      end
+    end
+
+    for effect <- [:shuttle, :suspension] do
+      test "#{effect} affects every piece of the matching connection", context do
+        alert =
+          build(:alert,
+            effect: unquote(effect),
+            informed_entities: [%{stop: "a"}, %{stop: "c"}]
+          )
+
+        stops = calculate_alerts(context, [alert])
+        connections = Enum.flat_map(stops, & &1.connections)
+
+        {affected, unaffected} =
+          Enum.split_with(connections, &(&1.from_stop == "a" and &1.to_stop == "c"))
+
+        assert length(affected) == 3
+        assert Enum.all?(affected, &(&1.service_status == unquote(effect)))
+        assert Enum.all?(unaffected, &(&1.service_status == :normal))
+        assert Enum.all?(stops, &(&1.closure_status == :open))
+
+        passing_stop = Enum.find(stops, &(&1.stop_id == "b"))
+        assert Enum.any?(passing_stop.connections, &(&1.service_status == unquote(effect)))
+      end
+    end
+
+    test "does not combine endpoints from separate alerts or match nil stops", context do
+      alerts =
+        Enum.map(["a", "c", nil], fn stop ->
+          build(:alert, informed_entities: [%{stop: stop}])
+        end)
+
+      connections = context |> calculate_alerts(alerts) |> Enum.flat_map(& &1.connections)
+      assert Enum.all?(connections, &(&1.service_status == :normal))
+    end
+
+    test "suspension takes precedence regardless of alert ordering", context do
+      shuttle = build(:alert, effect: :shuttle, informed_entities: [%{stop: "a"}, %{stop: "c"}])
+      suspension = %{shuttle | effect: :suspension}
+
+      for alerts <- [[shuttle, suspension], [suspension, shuttle]] do
+        affected =
+          context
+          |> calculate_alerts(alerts)
+          |> Enum.flat_map(& &1.connections)
+          |> Enum.filter(&(&1.from_stop == "a" and &1.to_stop == "c"))
+
+        assert Enum.all?(affected, &(&1.service_status == :suspension))
+      end
+    end
+
+    test "refreshes cached segments and clears previous alerts without changing layout",
+         context do
+      {stop_graph, segment_graph, cached_segments} =
+        GTFSRouteBranching.calculate(
+          context.route,
+          0,
+          context.canon_stop_ids,
+          context.system_data
+        )
+
+      :digraph.delete(stop_graph)
+      :digraph.delete(segment_graph)
+
+      stops = Enum.flat_map(cached_segments, & &1.stops)
+      assert Enum.all?(stops, &is_nil(&1.closure_status))
+      assert Enum.all?(Enum.flat_map(stops, & &1.connections), &is_nil(&1.service_status))
+
+      alerts = [
+        build(:alert, effect: :stop_closure, informed_entities: [%{stop: "b"}]),
+        build(:alert, effect: :shuttle, informed_entities: [%{stop: "a"}, %{stop: "c"}])
+      ]
+
+      updated = Segment.apply_alerts(cached_segments, alerts)
+      assert updated != cached_segments
+      assert Segment.apply_alerts(updated, []) == Segment.apply_alerts(cached_segments, [])
+
+      suspension = build(:alert, informed_entities: [%{stop: "b"}, %{stop: "d"}])
+
+      assert Segment.apply_alerts(updated, [suspension]) ==
+               Segment.apply_alerts(cached_segments, [suspension])
+    end
+
+    test "calculate does not apply alerts from system data", context do
+      alert = build(:alert, effect: :stop_closure, informed_entities: [%{stop: "b"}])
+      system_data = Map.put(context.system_data, :alerts, [alert])
+
+      {stop_graph, segment_graph, segments} =
+        GTFSRouteBranching.calculate(context.route, 0, context.canon_stop_ids, system_data)
+
+      :digraph.delete(stop_graph)
+      :digraph.delete(segment_graph)
+
+      stops = Enum.flat_map(segments, & &1.stops)
+      assert Enum.all?(stops, &is_nil(&1.closure_status))
+      assert Enum.all?(Enum.flat_map(stops, & &1.connections), &is_nil(&1.service_status))
+
+      [closed_stop] =
+        segments
+        |> Segment.apply_alerts([alert])
+        |> Enum.flat_map(& &1.stops)
+        |> Enum.filter(&(&1.closure_status == :closed))
+
+      assert closed_stop.stop_id == "b"
     end
   end
 end
